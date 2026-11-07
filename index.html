@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Student Calculator</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:18px;background:#101827;color:white;font-family:Arial,sans-serif}
+.container{max-width:650px;margin:auto}
+h1{text-align:center;color:#65d6ff}
+.subtitle{text-align:center;color:#b9c5d6}
+.card{background:#1c293b;padding:18px;margin:16px 0;border-radius:14px}
+label{display:block;margin:12px 0 6px}
+input{width:100%;padding:12px;border:1px solid #52647b;border-radius:8px;background:#101827;color:white;font-size:16px}
+button{width:100%;padding:13px;margin-top:14px;border:0;border-radius:9px;background:#16a8d8;color:white;font-size:16px;font-weight:bold}
+.secondary{background:#52647b}
+.result{display:none}
+.score{font-size:24px;font-weight:bold;color:#65d6ff}
+.bar-bg{background:#34445a;height:12px;border-radius:10px;overflow:hidden}
+.bar{height:100%;width:0;background:#23c9a5}
+.subject{margin:15px 0}
+.advice{background:#123c3b;padding:12px;border-radius:8px}
+#chatOutput{min-height:55px;padding:12px;background:#101827;border-radius:8px;margin-top:12px;white-space:pre-wrap}
+.small{color:#aab8ca;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>AI Student Calculator</h1>
+<p class="subtitle">Your personal academic performance dashboard</p>
+
+<div class="card" id="inputCard">
+<h2>Enter Student Details</h2>
+<label for="studentName">Student Name</label>
+<input id="studentName" type="text" placeholder="Enter your name">
+
+<label for="math">Mathematics Marks (out of 100)</label>
+<input id="math" type="number" min="0" max="100" placeholder="Maths marks">
+
+<label for="physics">Physics Marks (out of 100)</label>
+<input id="physics" type="number" min="0" max="100" placeholder="Physics marks">
+
+<label for="chemistry">Chemistry Marks (out of 100)</label>
+<input id="chemistry" type="number" min="0" max="100" placeholder="Chemistry marks">
+
+<button type="button" onclick="calculate()">Calculate Result</button>
+<p id="error" style="color:#ff8585"></p>
+</div>
+
+<div class="result" id="result">
+<div class="card">
+<h2>Student Performance Report</h2>
+<p id="reportName"></p>
+<p class="score" id="total"></p>
+<p id="average"></p>
+<p id="grade"></p>
+<div class="advice" id="advice"></div>
+</div>
+
+<div class="card">
+<h2>Subject Performance</h2>
+<div class="subject">
+<p id="mathText"></p>
+<div class="bar-bg"><div class="bar" id="mathBar"></div></div>
+</div>
+<div class="subject">
+<p id="physicsText"></p>
+<div class="bar-bg"><div class="bar" id="physicsBar"></div></div>
+</div>
+<div class="subject">
+<p id="chemistryText"></p>
+<div class="bar-bg"><div class="bar" id="chemistryBar"></div></div>
+</div>
+</div>
+
+<button type="button" onclick="downloadPDF()">Download PDF</button>
+<button type="button" class="secondary" onclick="editMarks()">Edit Marks</button>
+<p class="small">AI Student Calculator - Student Performance Report</p>
+</div>
+
+<div class="card" id="assistant">
+<h2>Study Assistant</h2>
+<p>Ask a study-related question.</p>
+<input id="question" type="text" placeholder="Example: How to study Physics?">
+<button type="button" onclick="askAssistant()">Ask Assistant</button>
+<div id="chatOutput">Hello! I can help with study tips, revision and basic subjects.</div>
+<p class="small">This is a basic rule-based assistant, not a live AI service.</p>
+</div>
+<p class="small">Made for learning and improving your studies.</p>
+</div>
+
+<script>
+let report = null;
+
+function calculate(){
+ const name=document.getElementById("studentName").value.trim();
+ const fields=["math","physics","chemistry"];
+ const error=document.getElementById("error");
+ error.textContent="";
+
+ if(!name){
+  error.textContent="Please enter the student name.";
+  return;
+ }
+
+ for(const id of fields){
+  const field=document.getElementById(id);
+  if(field.value==="" || !Number.isFinite(Number(field.value)) ||
+     Number(field.value)<0 || Number(field.value)>100){
+   error.textContent="Enter valid marks between 0 and 100.";
+   field.focus();
+   return;
+  }
+ }
+
+ const math=Number(document.getElementById("math").value);
+ const physics=Number(document.getElementById("physics").value);
+ const chemistry=Number(document.getElementById("chemistry").value);
+ const total=math+physics+chemistry;
+ const average=total/3;
+
+ let grade,advice;
+ if(average>=90){
+  grade="A+";
+  advice="Excellent performance! Keep learning and practising.";
+ }else if(average>=80){
+  grade="A";
+  advice="Very good work! Continue your preparation.";
+ }else if(average>=60){
+  grade="B";
+  advice="Good effort. Practise regularly to improve.";
+ }else if(average>=40){
+  grade="C";
+  advice="Review difficult topics and keep working steadily.";
+ }else{
+  grade="Needs Improvement";
+  advice="Start with the basics and ask your teachers for help.";
+ }
+
+ report={name,math,physics,chemistry,total,average,grade,advice};
+
+ document.getElementById("reportName").textContent="Student: "+name;
+ document.getElementById("total").textContent="Total: "+total+" / 300";
+ document.getElementById("average").textContent="Average: "+average.toFixed(2)+"%";
+ document.getElementById("grade").textContent="Grade: "+grade;
+ document.getElementById("advice").textContent="Study Advice: "+advice;
+
+ showSubject("math",math);
+ showSubject("physics",physics);
+ showSubject("chemistry",chemistry);
+
+ document.getElementById("result").style.display="block";
+ document.getElementById("result").scrollIntoView({behavior:"smooth"});
+}
+
+function showSubject(subject,mark){
+ document.getElementById(subject+"Text").textContent=
+  subject.charAt(0).toUpperCase()+subject.slice(1)+": "+mark+"/100";
+ document.getElementById(subject+"Bar").style.width=mark+"%";
+}
+
+function editMarks(){
+ document.getElementById("result").style.display="none";
+ document.getElementById("inputCard").scrollIntoView({behavior:"smooth"});
+}
+
+function pdfEscape(text){
+ return String(text).replace(/[^\x20-\x7E]/g,"?")
+  .replace(/\\/g,"\\\\").replace(/\(/g,"\\(").replace(/\)/g,"\\)");
+}
+
+function createPDF(lines){
+ const encoder=new TextEncoder();
+ const commands=["BT","/F1 18 Tf","50 790 Td"];
+ lines.forEach((line,index)=>{
+  if(index===0){
+   commands.push("("+pdfEscape(line)+") Tj");
+  }else{
+   commands.push("0 -30 Td");
+   commands.push("/F1 12 Tf");
+   commands.push("("+pdfEscape(line)+") Tj");
+  }
+ });
+ commands.push("ET");
+ const stream=commands.join("\n");
+ const objects=[
+  "<< /Type /Catalog /Pages 2 0 R >>",
+  "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+  "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+  "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+  "<< /Length "+encoder.encode(stream).length+" >>\nstream\n"+stream+"\nendstream"
+ ];
+ let pdf="%PDF-1.4\n";
+ const offsets=[0];
+ objects.forEach((obj,index)=>{
+  offsets.push(encoder.encode(pdf).length);
+  pdf+=(index+1)+" 0 obj\n"+obj+"\nendobj\n";
+ });
+ const xref=encoder.encode(pdf).length;
+ pdf+="xref\n0 6\n0000000000 65535 f \n";
+ for(let i=1;i<=5;i++){
+  pdf+=String(offsets[i]).padStart(10,"0")+" 00000 n \n";
+ }
+ pdf+="trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n"+xref+"\n%%EOF";
+ return new Blob([encoder.encode(pdf)],{type:"application/pdf"});
+}
+
+function downloadPDF(){
+ if(!report){
+  alert("Please calculate the result first.");
+  return;
+ }
+ const r=report;
+ const lines=[
+  "STUDENT PERFORMANCE REPORT",
+  "Student: "+r.name,
+  "Mathematics: "+r.math+"/100",
+  "Physics: "+r.physics+"/100",
+  "Chemistry: "+r.chemistry+"/100",
+  "Total Marks: "+r.total+"/300",
+  "Average: "+r.average.toFixed(2)+"%",
+  "Grade: "+r.grade,
+  "Study Advice:",
+  r.advice,
+  "Generated by AI Student Calculator"
+ ];
+ const blob=createPDF(lines);
+ const url=URL.createObjectURL(blob);
+ const link=document.createElement("a");
+ link.href=url;
+ link.download="Student_Performance_Report.pdf";
+ document.body.appendChild(link);
+ link.click();
+ link.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),10000);
+}
+
+function askAssistant(){
+ const q=document.getElementById("question").value.toLowerCase().trim();
+ const output=document.getElementById("chatOutput");
+ if(!q){
+  output.textContent="Please type a question first.";
+  return;
+ }
+ let answer;
+ if(q.includes("hello")||q.includes("hi")){
+  answer="Hello! What subject would you like help with?";
+ }else if(q.includes("physics")){
+  answer="Physics tip: Understand concepts, learn formulas and solve practice problems.";
+ }else if(q.includes("chemistry")){
+  answer="Chemistry tip: Make short notes and revise important concepts regularly.";
+ }else if(q.includes("math")){
+  answer="Maths tip: Practise problems daily and understand each step.";
+ }else if(q.includes("python")){
+  answer="Python tip: Start with variables, conditions, loops and functions.";
+ }else if(q.includes("study")||q.includes("timetable")){
+  answer="Make a realistic timetable, study one topic at a time and take short breaks.";
+ }else if(q.includes("exam")||q.includes("revision")){
+  answer="Exam tip: Revise textbook concepts and practise previous questions.";
+ }else{
+  answer="Try asking about Maths, Physics, Chemistry, Python or study tips.";
+ }
+ output.textContent=answer;
+}
+</script>
+</body>
+</html>
